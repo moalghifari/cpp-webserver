@@ -34,6 +34,7 @@ void Connection::handleRead(const boost::system::error_code& error, std::size_t 
             {"/hello", "Hello World!"},
             {"/hi", "Hi World!"},
             {"/test", "Test"},
+            {"/json", "{\"code\":0,\"msg\":\"success\"}"},
             {"/", "C++ Webserver"} 
         };
 
