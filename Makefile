@@ -2,7 +2,7 @@ CXX := g++
 CXXFLAGS := -std=c++11 -I ./libs/boost_1_84_0
 LIBS := -lboost_system
 
-SOURCES := main.cpp server.cpp connection.cpp
+SOURCES := main.cpp server.cpp connection.cpp http_request.cpp
 OBJECTS := $(SOURCES:.cpp=.o)
 EXECUTABLE := webserver
 
