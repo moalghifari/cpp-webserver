@@ -1,0 +1,5 @@
+libs/
+.vscode/
+*.o
+webserver
+.DS_Store
