@@ -1,4 +1,9 @@
 #include "connection.h"
+#include <map>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include "http_request.h"
 
 Connection::Pointer Connection::create(boost::asio::io_service& io_service) {
     return Pointer(new Connection(io_service));
@@ -25,8 +30,26 @@ void Connection::handleRead(const boost::system::error_code& error, std::size_t 
         request.resize(bytesTransferred);
         request_stream.read(&request[0], static_cast<std::streamsize>(bytesTransferred));
 
-        // Respond with a simple "Hello, World!" message
-        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
+        std::map<std::string, std::string> responseMap = {
+            {"/hello", "Hello World!"},
+            {"/hi", "Hi World!"},
+            {"/test", "Test"},
+            {"/", "C++ Webserver"} 
+        };
+
+        HttpRequest httpRequest;
+        HttpRequestParser httpRequestParser;
+        httpRequest = httpRequestParser.parse(request);
+
+        std::string response;
+        auto it = responseMap.find(httpRequest.path);
+        if (it != responseMap.end()) {
+            std::string text = it->second;
+            response = "HTTP/1.1 200 OK\r\nContent-Length: " + std::to_string(text.length()) + "\r\n\r\n" + text;
+        } else {
+            response = "HTTP/1.1 404 Not Found\r\nContent-Length: 9\r\n\r\nNot Found";
+        }
+
         boost::asio::async_write(socket_, boost::asio::buffer(response),
                                  boost::bind(&Connection::handleWrite, shared_from_this(),
                                              boost::asio::placeholders::error,
