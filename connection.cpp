@@ -11,11 +11,11 @@ Connection::Pointer Connection::create(boost::asio::io_service& io_service) {
 }
 
 Connection::Connection(boost::asio::io_service& io_service) : socket_(io_service) {
-    routeHandlers["/hello"] = &Handlers::handleHello;
-    routeHandlers["/hi"] = &Handlers::handleHi;
-    routeHandlers["/test"] = &Handlers::handleTest;
-    routeHandlers["/json"] = &Handlers::handleJson;
-    routeHandlers["/"] = &Handlers::handleRoot;
+    routeHandlers["GET /hello"] = &Handlers::handleHello;
+    routeHandlers["GET /hi"] = &Handlers::handleHi;
+    routeHandlers["GET /test"] = &Handlers::handleTest;
+    routeHandlers["GET /json"] = &Handlers::handleJson;
+    routeHandlers["GET /"] = &Handlers::handleRoot;
 }
 
 boost::asio::ip::tcp::socket& Connection::socket() {
@@ -38,7 +38,7 @@ void Connection::handleRead(const boost::system::error_code& error, std::size_t 
         HttpRequestParser httpRequestParser;
         HttpRequest httpRequest = httpRequestParser.parse(request);
         std::string response;
-        auto it = routeHandlers.find(httpRequest.path);
+        auto it = routeHandlers.find(httpRequest.method + " " + httpRequest.path);
         if (it != routeHandlers.end()) {
             auto [status, response] = it->second(httpRequest);
             sendResponse(status, response);
