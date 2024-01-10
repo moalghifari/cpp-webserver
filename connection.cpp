@@ -53,7 +53,7 @@ void Connection::handleWrite(const boost::system::error_code& error, std::size_t
 }
 
 void Connection::sendResponse(const std::string& status, const std::string& responseBody) {
-    std::string response = "HTTP/1.1 " + status + "\r\nContent-Length: " +
+    std::string response = "HTTP/1.1 " + status + "\r\nContent-Type: application/json\r\nContent-Length: " +
                             std::to_string(responseBody.length()) + "\r\n\r\n" + responseBody;
     boost::asio::async_write(socket_, boost::asio::buffer(response),
                                 boost::bind(&Connection::handleWrite, shared_from_this(),
