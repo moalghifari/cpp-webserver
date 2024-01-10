@@ -4,13 +4,19 @@
 #include <sstream>
 #include <vector>
 #include "http_request.h"
+#include "handlers.h"
 
 Connection::Pointer Connection::create(boost::asio::io_service& io_service) {
     return Pointer(new Connection(io_service));
 }
 
-Connection::Connection(boost::asio::io_service& io_service)
-    : socket_(io_service) {}
+Connection::Connection(boost::asio::io_service& io_service) : socket_(io_service) {
+    routeHandlers["/hello"] = &Handlers::handleHello;
+    routeHandlers["/hi"] = &Handlers::handleHi;
+    routeHandlers["/test"] = &Handlers::handleTest;
+    routeHandlers["/json"] = &Handlers::handleJson;
+    routeHandlers["/"] = &Handlers::handleRoot;
+}
 
 boost::asio::ip::tcp::socket& Connection::socket() {
     return socket_;
@@ -29,36 +35,28 @@ void Connection::handleRead(const boost::system::error_code& error, std::size_t 
         std::string request;
         request.resize(bytesTransferred);
         request_stream.read(&request[0], static_cast<std::streamsize>(bytesTransferred));
-
-        std::map<std::string, std::string> responseMap = {
-            {"/hello", "Hello World!"},
-            {"/hi", "Hi World!"},
-            {"/test", "Test"},
-            {"/json", "{\"code\":0,\"msg\":\"success\"}"},
-            {"/", "C++ Webserver"} 
-        };
-
-        HttpRequest httpRequest;
         HttpRequestParser httpRequestParser;
-        httpRequest = httpRequestParser.parse(request);
-
+        HttpRequest httpRequest = httpRequestParser.parse(request);
         std::string response;
-        auto it = responseMap.find(httpRequest.path);
-        if (it != responseMap.end()) {
-            std::string text = it->second;
-            response = "HTTP/1.1 200 OK\r\nContent-Length: " + std::to_string(text.length()) + "\r\n\r\n" + text;
+        auto it = routeHandlers.find(httpRequest.path);
+        if (it != routeHandlers.end()) {
+            auto [status, response] = it->second(httpRequest);
+            sendResponse(status, response);
         } else {
-            response = "HTTP/1.1 404 Not Found\r\nContent-Length: 9\r\n\r\nNot Found";
+            sendResponse("404 Not Found", "Not Found");
         }
-
-        boost::asio::async_write(socket_, boost::asio::buffer(response),
-                                 boost::bind(&Connection::handleWrite, shared_from_this(),
-                                             boost::asio::placeholders::error,
-                                             boost::asio::placeholders::bytes_transferred));
     }
 }
 
-void Connection::handleWrite(const boost::system::error_code& error, std::size_t /* bytesTransferred */) {
-    // Close the connection after writing the response
+void Connection::handleWrite(const boost::system::error_code& error, std::size_t) {
     socket_.close();
+}
+
+void Connection::sendResponse(const std::string& status, const std::string& responseBody) {
+    std::string response = "HTTP/1.1 " + status + "\r\nContent-Length: " +
+                            std::to_string(responseBody.length()) + "\r\n\r\n" + responseBody;
+    boost::asio::async_write(socket_, boost::asio::buffer(response),
+                                boost::bind(&Connection::handleWrite, shared_from_this(),
+                                            boost::asio::placeholders::error,
+                                            boost::asio::placeholders::bytes_transferred));
 }
