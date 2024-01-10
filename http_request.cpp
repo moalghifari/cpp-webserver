@@ -13,8 +13,7 @@ HttpRequest HttpRequestParser::parse(const std::string& rawRequest) {
 
     while (std::getline(requestStream, line) && !line.empty()) {
         size_t separatorPos = line.find(":");
-        if (line == "{") {
-            request.body = "{";
+        if (line.length() == 1) {
             break;
         }
         if (separatorPos != std::string::npos) {
@@ -24,7 +23,5 @@ HttpRequest HttpRequestParser::parse(const std::string& rawRequest) {
         }
     }
     std::getline(requestStream, request.body, '\0');
-    request.body = "{" + request.body;
-
     return request;
 }
