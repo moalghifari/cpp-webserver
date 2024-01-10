@@ -16,7 +16,7 @@ namespace Handlers {
     std::string createBook(const std::string& requestBody);
     std::string readBooks();
     std::string readBook(const std::string& bookId);
-    std::string updateBook(const std::string& bookId, const std::string& requestBody);
+    std::string updateBook(const std::string& requestBody);
     std::string deleteBook(const std::string& bookId);
 
     std::tuple<std::string, std::string> handleHello(const HttpRequest& httpRequest);

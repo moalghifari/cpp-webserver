@@ -42,9 +42,8 @@ namespace Handlers {
     }
 
     std::tuple<std::string, std::string> handleUpdateBook(const HttpRequest& httpRequest) {
-        std::string bookId = httpRequest.path.substr(6);
         std::string requestBody(httpRequest.body.begin(), httpRequest.body.end());
-        std::string response = updateBook(bookId, requestBody);
+        std::string response = updateBook(requestBody);
         std::tuple<std::string, std::string> result;
         std::get<0>(result) = "200 OK";
         std::get<1>(result) = response;
@@ -71,7 +70,7 @@ namespace Handlers {
             bookDatabase.push_back(newBook);
             return "{\"code\": 0, \"msg\": \"Book created successfully\"}";
         } catch (const std::exception& e) {
-            return "{\"code\": 1, \"msg\": \"Error creating book\", \"error\": \"" + std::string(e.what()) + "\"}";
+            return "{\"code\": 1, \"msg\": \"Error creating book\", \"error\": \"" + std::string(e.what()) + "\" + \"requestBody\": \"" + requestBody + "\"}";
         }
     }
 
@@ -102,13 +101,14 @@ namespace Handlers {
         }
     }
 
-    std::string updateBook(const std::string& bookId, const std::string& requestBody) {
+    std::string updateBook(const std::string& requestBody) {
+        auto jsonBody = json::parse(requestBody);
+        std::string bookId = jsonBody["id"].get<std::string>();
         auto it = std::find_if(bookDatabase.begin(), bookDatabase.end(),
                                [bookId](const Book& book) { return book.id == bookId; });
 
         if (it != bookDatabase.end()) {
             try {
-                auto jsonBody = json::parse(requestBody);
                 it->title = jsonBody["title"].get<std::string>();
                 it->author = jsonBody["author"].get<std::string>();
                 return "{\"code\": 0, \"msg\": \"Book updated successfully\"}";
