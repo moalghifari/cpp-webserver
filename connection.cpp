@@ -5,12 +5,18 @@
 #include <vector>
 #include "http_request.h"
 #include "handlers.h"
+#include "libs/nlohmann/json.hpp"
 
 Connection::Pointer Connection::create(boost::asio::io_service& io_service) {
     return Pointer(new Connection(io_service));
 }
 
 Connection::Connection(boost::asio::io_service& io_service) : socket_(io_service) {
+    routeHandlers["POST /book"] = &Handlers::handleCreateBook;
+    routeHandlers["PUT /book"] = &Handlers::handleUpdateBook;
+    routeHandlers["GET /book"] = &Handlers::handleReadBooks;
+    routeHandlers["GET /book/:id"] = &Handlers::handleReadBook;
+
     routeHandlers["GET /hello"] = &Handlers::handleHello;
     routeHandlers["GET /hi"] = &Handlers::handleHi;
     routeHandlers["GET /test"] = &Handlers::handleTest;
@@ -23,10 +29,10 @@ boost::asio::ip::tcp::socket& Connection::socket() {
 }
 
 void Connection::start() {
-    boost::asio::async_read_until(socket_, buffer_, "\r\n\r\n",
-                                  boost::bind(&Connection::handleRead, shared_from_this(),
-                                              boost::asio::placeholders::error,
-                                              boost::asio::placeholders::bytes_transferred));
+    boost::asio::async_read(socket_, buffer_, boost::asio::transfer_at_least(1),
+                boost::bind(&Connection::handleRead, shared_from_this(),
+                            boost::asio::placeholders::error,
+                            boost::asio::placeholders::bytes_transferred));
 }
 
 void Connection::handleRead(const boost::system::error_code& error, std::size_t bytesTransferred) {
