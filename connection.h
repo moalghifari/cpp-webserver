@@ -3,6 +3,9 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <memory>
+#include "http_request.h"
+#include <map>
+#include <tuple>
 
 class Connection : public std::enable_shared_from_this<Connection> {
 public:
@@ -21,6 +24,9 @@ private:
 
     void handleWrite(const boost::system::error_code& error, std::size_t /* bytesTransferred */);
 
+    void sendResponse(const std::string& status, const std::string& responseBody);
+
+    std::map<std::string, std::function<std::tuple<std::string, std::string>(const HttpRequest&)>> routeHandlers;
     boost::asio::ip::tcp::socket socket_;
     boost::asio::streambuf buffer_;
 };
